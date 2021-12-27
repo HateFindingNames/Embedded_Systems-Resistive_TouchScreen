@@ -16,16 +16,19 @@ A2    PF5     red     y_up
 A3    PF4     ylw     y_lo
 
 ToDo:
-[ ] Improve filtering (?)
+[x] Improve filtering (?)
+    Note: added median filter
 [x] Fix touch-release bug
 [x] Output decimals to serial
 [ ] Add calibration routine (?)
 [ ] Manual calibration
 [x] Fix dead area at outer most right side
+    Note: fixing touch-release bug fixed this one as well
 */
 
 float xvals[OVERSAMPLING] {0};
 float yvals[OVERSAMPLING] {0};
+float *p;
 
 void setup() {
   cli();
@@ -73,30 +76,51 @@ void setup() {
   delay(300);
 }
 
-float doSomeMath(float vals[OVERSAMPLING]) {
+// float doSomeAveraging(float vals[]) {
+//   float avrg = 0;
+//   for (int i = 0; i < OVERSAMPLING; i++) {
+//     avrg += vals[i];
+//   }
+//   return avrg / OVERSAMPLING;
+// }
+
+float doSomeMedianFiltering(float *p, int n, int clamp) {
+  /*
+  Implementation of median filter. All values in the range
+  
+    <value at center of array>-clamp < value < <value at center of array>+clamp
+
+  will be averaged to the final value.
+  */
+  int m = 0;
   float avrg = 0;
-  for (int i = 0; i < OVERSAMPLING; i++) {
-    avrg += vals[i];
+  for (int i = 0; i < n; i++) {
+    if ((*p+n/2 < (*p+n/2)+clamp) | (*p+n/2 > (*p+n/2)-clamp)) {
+      avrg += *p;
+      m++;
+    }
+    *p++;
   }
-  return avrg / OVERSAMPLING;
+  return avrg / m;
 }
 
 void loop() {
   delay(5);
   float xval;
   float yval;
-  // Shifting array elements by 1 to the left dropping the 0th element
-  for (int i = 0; i < OVERSAMPLING-1; i++) {
-    xvals[i] = xvals[i+1];
-    yvals[i] = yvals[i+1];
-  }
 
   if (isFingered()) {
-    xvals[OVERSAMPLING-1] = readX();
+    for (int i = 0; i < OVERSAMPLING; i++) {
+      xvals[i] = readX();
+    }
     if (isFingered()) {
-      yvals[OVERSAMPLING-1] = readY();
-      xval = doSomeMath(xvals);
-      yval = doSomeMath(yvals);
+      for (int i = 0; i < OVERSAMPLING; i++) {
+        yvals[i] = readY();
+      }
+      p = xvals;
+      xval = doSomeMedianFiltering(p, OVERSAMPLING, CLAMP);
+      p = yvals;
+      yval = doSomeMedianFiltering(p, OVERSAMPLING, CLAMP);
 
       // Mouse control values are only send if MOUSE_EN (PIND6) is pulled LOW,
       // else positional vales are sent over serial
