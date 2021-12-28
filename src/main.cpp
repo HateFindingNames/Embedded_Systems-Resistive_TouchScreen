@@ -26,9 +26,9 @@ ToDo:
     Note: fixing touch-release bug fixed this one as well
 */
 
-float xvals[OVERSAMPLING] {0};
-float yvals[OVERSAMPLING] {0};
-float *p;
+int xvals[OVERSAMPLING] {0};
+int yvals[OVERSAMPLING] {0};
+int *p;
 
 void setup() {
   cli();
@@ -84,7 +84,7 @@ void setup() {
 //   return avrg / OVERSAMPLING;
 // }
 
-float doSomeMedianFiltering(float *p, int n, int clamp) {
+float doSomeMedianFiltering(int *p, int n, int clamp) {
   /*
   Implementation of median filter. All values in the range
   
@@ -93,15 +93,15 @@ float doSomeMedianFiltering(float *p, int n, int clamp) {
   will be averaged to the final value.
   */
   int m = 0;
-  float avrg = 0;
+  int sum = 0;
   for (int i = 0; i < n; i++) {
     if ((*p+n/2 < (*p+n/2)+clamp) | (*p+n/2 > (*p+n/2)-clamp)) {
-      avrg += *p;
+      sum += *p;
       m++;
     }
     *p++;
   }
-  return avrg / m;
+  return sum / (float)m;
 }
 
 void loop() {
@@ -113,10 +113,12 @@ void loop() {
     for (int i = 0; i < OVERSAMPLING; i++) {
       xvals[i] = readX();
     }
+    // xval = readX();
     if (isFingered()) {
       for (int i = 0; i < OVERSAMPLING; i++) {
         yvals[i] = readY();
       }
+      // yval = readY();
       p = xvals;
       xval = doSomeMedianFiltering(p, OVERSAMPLING, CLAMP);
       p = yvals;
@@ -149,6 +151,9 @@ ISR(INT0_vect){
 }
 
 ISR(TIMER0_COMPA_vect) {
+  // setTOCM(false);
   DDRF |= (1<<DDF5) | (1<<DDF4);                            // PF5 and PF4 as output
   PORTF |= (1<<PORTF5) | (1<<PORTF4);                       // PF5 and PF4 HIGH
+  // DDRF = 0x30;
+  // PORTF = 0x30;
 }
