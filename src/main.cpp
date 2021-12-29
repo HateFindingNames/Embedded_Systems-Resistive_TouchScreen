@@ -135,7 +135,7 @@ void loop() {
       } else {
         xval = map(xval, XMIN, XMAX+1.0, -5*WIDTH, 5*WIDTH+1)/10.0;
         yval = map(yval, YMIN, YMAX+1.0, -5*HEIGHT, 5*HEIGHT+1)/10.0;
-        Serial.print(xval);Serial.print("\t");Serial.println(yval);
+        Serial.print(xval,1);Serial.print("\t");Serial.println(yval,1);
       }
     }
   }

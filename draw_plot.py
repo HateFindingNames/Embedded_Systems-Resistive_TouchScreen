@@ -79,25 +79,21 @@ class Draw:
 
 		if yval < -HEIGHT/2+20:
 			if xval < (-WIDTH/2 + WIDTH/4):
-				print("R")
 				self.switch_color = 'r'
 				# self.pen_size_c = ['r']
 				# self.pen_size.set_color(self.pen_size_c)
 				# self.active_pen = self.r_pen
 			elif xval >= (-WIDTH/2 + WIDTH/4) and xval < (-WIDTH/2 + WIDTH/2):
-				print("G")
 				self.switch_color = 'g'
 				# self.pen_size_c = ['g']
 				# self.pen_size.set_color(self.pen_size_c)
 				# self.active_pen = self.g_pen
 			elif xval >= (-WIDTH/2 + WIDTH/2) and xval < (-WIDTH/2 + 3*WIDTH/4):
-				print("B")
 				self.switch_color = 'b'
 				# self.pen_size_c = ['b']
 				# self.pen_size.set_color(self.pen_size_c)
 				# self.active_pen = self.b_pen
 			elif xval >= -WIDTH/2.0+(WIDTH/4.0)*3:
-				print("C")
 				self.r_xs = []
 				self.r_ys = []
 				self.g_xs = []
