@@ -3,8 +3,8 @@
 #define ARDUINO_H
 #endif
 #include "defines.h"
-#include "helper_functions.h"
-// #include "calibration.h"
+#include "FourWireRTP.h"
+#include "Calibration.h"
 #include "Mouse.h"
 
 /*
@@ -32,6 +32,7 @@ ToDo:
 int xvals[OVERSAMPLING] {0};
 int yvals[OVERSAMPLING] {0};
 int *p;
+int calib_vals[4] = {0};
 
 void setup() {
   cli();
@@ -71,12 +72,21 @@ void setup() {
   */
   EICRA |= (1<<ISC00);
   EIMSK |= (1<<INT0);                                       // Enable external interrupt on INTO
+  // Watchdog-Timer
+  // WDTCSR |= (1<<WDE) | (1<<WDIE);                           // Interrupt and System Reset Mode (p. 60)
+  // WDTCSR |= (1<<WDP3) | (1<<WDP0);                          // 8s till WDT Reset
 
   sei();
   Serial.begin(115200);
   Mouse.begin();
 
-  delay(300);
+  delay(1000);
+
+  // Calibration();
+  // calib_vals[0] = Calibration.getLowerX(OVERSAMPLING, CLAMP);
+  Serial.print("Xmin is: ");
+  Serial.println(calib_vals[0]);
+  // calib_vals[0] = Calibration.getLowerX(OVERSAMPLING, CLAMP);
 }
 
 void loop() {
@@ -84,20 +94,20 @@ void loop() {
   float xval;
   float yval;
 
-  if (isFingered()) {
+  if (FourWireRTP.isFingered()) {
     for (int i = 0; i < OVERSAMPLING; i++) {
-      xvals[i] = readX();
+      xvals[i] = FourWireRTP.readX();
     }
     // xval = readX();
-    if (isFingered()) {
+    if (FourWireRTP.isFingered()) {
       for (int i = 0; i < OVERSAMPLING; i++) {
-        yvals[i] = readY();
+        yvals[i] = FourWireRTP.readY();
       }
       // yval = readY();
-      p = xvals;
-      xval = doSomeMedianFiltering(xvals, OVERSAMPLING, CLAMP);
-      p = yvals;
-      yval = doSomeMedianFiltering(yvals, OVERSAMPLING, CLAMP);
+      // p = xvals;
+      xval = FourWireRTP.doSomeMedianFiltering(xvals, OVERSAMPLING, CLAMP);
+      // p = yvals;
+      yval = FourWireRTP.doSomeMedianFiltering(yvals, OVERSAMPLING, CLAMP);
 
       // Mouse control values are only send if MOUSE_EN (PIND6) is pulled LOW,
       // else positional vales are sent over serial
@@ -131,4 +141,8 @@ ISR(TIMER0_COMPA_vect) {
   PORTF |= (1<<PORTF5) | (1<<PORTF4);                       // PF5 and PF4 HIGH
   // DDRF = 0x30;
   // PORTF = 0x30;
+}
+
+ISR(WDT_vect) {
+  Serial.println("WDT Timeout. Resetting MCU. Bye.");
 }

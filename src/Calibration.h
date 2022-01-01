@@ -1,17 +1,16 @@
-#ifdef NEWSTUFF
 #pragma once
 #ifndef CALIBRATION_H
 #define CALIBRATION_H
 #include <Arduino.h>
 #include "defines.h"
 
-class Calibration {
+class Calibration_ {
 	public:
-		Calibration(void);
-		int getLowerX(void);
-		int getUpperX(void);
-		int getLowerY(void);
-		int getUpperY(void);
+		Calibration_(void);
+		int getLowerX(int samples, int clamp);
+		int getUpperX(int samples, int clamp);
+		int getLowerY(int samples, int clamp);
+		int getUpperY(int samples, int clamp);
 	private:
 		int _xmin;
 		int _xmax;
@@ -21,5 +20,6 @@ class Calibration {
 		int _buffer;
 };
 
-#endif
+extern Calibration_ Calibration;
+
 #endif

@@ -1,22 +1,19 @@
-#ifdef NEWSTUFF
-#ifndef HELPER_FUNCTIONS_H
-#define HELPER_FUNCTIONS_H
+#ifndef FOURWIRERTP_H
+#define FOURWIRERTP_H
 #include <Arduino.h>
 #include "defines.h"
 
-class FourWireRTP() {
+class FourWireRTP_ {
 	public:
-		void setTOCM(bool set);
-		uint16_t getADC();
+		FourWireRTP_();
 		int readX(void);
 		int readY(void);
 		bool isFingered(void);
-		float doSomeMedianFiltering(int *p, int n, int clamp);
+		int doSomeMedianFiltering(int *p, int n, int clamp);
 	private:
-		int _xvals[OVERSAMPLING] {0};
-		int _yvals[OVERSAMPLING] {0};
-		int *_p;
+		void setTOCM(bool set);
+		uint16_t getADC();
 };
 
-#endif
+extern FourWireRTP_ FourWireRTP;
 #endif
