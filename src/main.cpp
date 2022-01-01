@@ -4,7 +4,8 @@
 #endif
 #include "defines.h"
 #include "helper_functions.h"
-#include <Mouse.h>
+// #include "calibration.h"
+#include "Mouse.h"
 
 /*
 Port mapping: A0 - A3 -> PF7 - PF4
@@ -22,8 +23,10 @@ ToDo:
 [x] Output decimals to serial
 [ ] Add calibration routine (?)
 [ ] Manual calibration
+    Note: includes fixing ADC output mapping
 [x] Fix dead area at outer most right side
     Note: fixing touch-release bug fixed this one as well
+[ ] Fix ADC output mapping
 */
 
 int xvals[OVERSAMPLING] {0};
@@ -76,34 +79,6 @@ void setup() {
   delay(300);
 }
 
-// float doSomeAveraging(float vals[]) {
-//   float avrg = 0;
-//   for (int i = 0; i < OVERSAMPLING; i++) {
-//     avrg += vals[i];
-//   }
-//   return avrg / OVERSAMPLING;
-// }
-
-float doSomeMedianFiltering(int *p, int n, int clamp) {
-  /*
-  Implementation of median filter. All values in the range
-  
-    <value at center of array>-clamp < value < <value at center of array>+clamp
-
-  will be averaged to the final value.
-  */
-  int m = 0;
-  int sum = 0;
-  for (int i = 0; i < n; i++) {
-    if ((*p+n/2 < (*p+n/2)+clamp) | (*p+n/2 > (*p+n/2)-clamp)) {
-      sum += *p;
-      m++;
-    }
-    *p++;
-  }
-  return sum / (float)m;
-}
-
 void loop() {
   delay(5);
   float xval;
@@ -120,9 +95,9 @@ void loop() {
       }
       // yval = readY();
       p = xvals;
-      xval = doSomeMedianFiltering(p, OVERSAMPLING, CLAMP);
+      xval = doSomeMedianFiltering(xvals, OVERSAMPLING, CLAMP);
       p = yvals;
-      yval = doSomeMedianFiltering(p, OVERSAMPLING, CLAMP);
+      yval = doSomeMedianFiltering(yvals, OVERSAMPLING, CLAMP);
 
       // Mouse control values are only send if MOUSE_EN (PIND6) is pulled LOW,
       // else positional vales are sent over serial
