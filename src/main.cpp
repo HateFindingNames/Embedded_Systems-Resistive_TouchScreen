@@ -3,7 +3,7 @@
 #define ARDUINO_H
 #endif
 #include "defines.h"
-#include "helper_functions.h"
+#include "FourWireRTP.h"
 #include <Mouse.h>
 
 /*
@@ -28,7 +28,9 @@ ToDo:
 
 int xvals[OVERSAMPLING] {0};
 int yvals[OVERSAMPLING] {0};
-int *p;
+// int *p;
+float xval;
+float yval;
 
 void setup() {
   cli();
@@ -84,30 +86,8 @@ void setup() {
 //   return avrg / OVERSAMPLING;
 // }
 
-float doSomeMedianFiltering(int *p, int n, int clamp) {
-  /*
-  Implementation of median filter. All values in the range
-  
-    <value at center of array>-clamp < value < <value at center of array>+clamp
-
-  will be averaged to the final value.
-  */
-  int m = 0;
-  int sum = 0;
-  for (int i = 0; i < n; i++) {
-    if ((*p+n/2 < (*p+n/2)+clamp) | (*p+n/2 > (*p+n/2)-clamp)) {
-      sum += *p;
-      m++;
-    }
-    *p++;
-  }
-  return sum / (float)m;
-}
-
 void loop() {
-  delay(5);
-  float xval;
-  float yval;
+  // delay(1);
 
   if (isFingered()) {
     for (int i = 0; i < OVERSAMPLING; i++) {
@@ -118,11 +98,8 @@ void loop() {
       for (int i = 0; i < OVERSAMPLING; i++) {
         yvals[i] = readY();
       }
-      // yval = readY();
-      p = xvals;
-      xval = doSomeMedianFiltering(p, OVERSAMPLING, CLAMP);
-      p = yvals;
-      yval = doSomeMedianFiltering(p, OVERSAMPLING, CLAMP);
+      xval = doSomeMedianFiltering(xvals, OVERSAMPLING, CLAMP);
+      yval = doSomeMedianFiltering(yvals, OVERSAMPLING, CLAMP);
 
       // Mouse control values are only send if MOUSE_EN (PIND6) is pulled LOW,
       // else positional vales are sent over serial
@@ -133,7 +110,7 @@ void loop() {
         // Serial.print(xval);Serial.print("\t");Serial.println(yval);
         delay(MOUSE_DELAY);
       } else {
-        xval = map(xval, XMIN, XMAX+1.0, -5*WIDTH, 5*WIDTH+1)/10.0;
+        xval = map(xval, XMIN, XMAX+1.0, 5*WIDTH, -5*WIDTH+1)/10.0;
         yval = map(yval, YMIN, YMAX+1.0, -5*HEIGHT, 5*HEIGHT+1)/10.0;
         Serial.print(xval,1);Serial.print("\t");Serial.println(yval,1);
       }

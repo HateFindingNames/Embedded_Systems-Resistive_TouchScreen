@@ -2,7 +2,7 @@
 #define ARDUINO_H
 #include <Arduino.h>
 #endif
-#include "helper_functions.h"
+#include "FourWireRTP.h"
 
 void setTOCM(bool set){
 	cli();
@@ -85,4 +85,44 @@ int readY() {
 	// Enable ADC and start conversion
 	// ADCSRA |= (1<<ADSC) | (1<<ADEN);
 	return getADC();
+}
+
+// int doSomeMedianFiltering(int p, int n, int clamp) {
+//   /*
+//   Implementation of median filter. All values in the range
+  
+//     <value at center of array>-clamp < value < <value at center of array>+clamp
+
+//   will be averaged to the final value.
+//   */
+//   int m = 0;
+//   int sum = 0;
+//   for (int i = 0; i < n; i++) {
+//     if ((*p+n/2 < (*p+n/2)+clamp) | (*p+n/2 > (*p+n/2)-clamp)) {
+//       sum += *p;
+//       m++;
+//     }
+//     p++;
+//   }
+//   return sum*10 / m;
+// }
+
+float doSomeMedianFiltering(int *p, int n, int clamp) {
+  /*
+  Implementation of median filter. All values in the range
+  
+    <value at center of array>-clamp < value < <value at center of array>+clamp
+
+  will be averaged to the final value.
+  */
+  int m = 0;
+  uint16_t sum = 0;
+  for (int i = 0; i < n; i++) {
+    if ((p[i] < p[n/2]+clamp) & (p[i] > p[n/2]-clamp)) {
+      sum += p[i];
+      m++;
+    }
+    // p++;
+  }
+  return sum / (float)m;
 }

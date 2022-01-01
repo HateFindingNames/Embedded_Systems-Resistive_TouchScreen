@@ -9,3 +9,4 @@ uint16_t getADC();
 int readX(void);
 int readY(void);
 bool isFingered(void);
+float doSomeMedianFiltering(int *p, int n, int clamp);

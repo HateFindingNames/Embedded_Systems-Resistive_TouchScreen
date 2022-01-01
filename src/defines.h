@@ -7,8 +7,8 @@
 #define YMAX 913.0
 
 // Size of the arrays holding ADC readings
-#define OVERSAMPLING 15
-#define CLAMP 50
+#define OVERSAMPLING 40								// Time to get one xy-pair: ((OVERSAMPLING*2)+2)/ADC_freq
+#define CLAMP 5
 
 // Physical dimensions of the sensitive area of the touch screen (in mm)
 #define WIDTH 212.2
