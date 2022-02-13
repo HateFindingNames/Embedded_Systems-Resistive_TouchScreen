@@ -2,11 +2,11 @@
 #include <Arduino.h>
 #define ARDUINO_H
 #endif
+#define MAPPING
+#define FILTERING
 #include "defines.h"
-#include "FourWireRTP.h"
-#include "Calibration.h"
+#include "helper_functions.h"
 #include "Mouse.h"
-
 /*
 Port mapping: A0 - A3 -> PF7 - PF4
 Pin   Port    Color   Position
@@ -32,7 +32,7 @@ ToDo:
 int xvals[OVERSAMPLING] {0};
 int yvals[OVERSAMPLING] {0};
 int *p;
-int calib_vals[4] = {0};
+// int calib_vals[4] = {0};
 
 void setup() {
   cli();
@@ -58,9 +58,10 @@ void setup() {
   // See p. 300 ff
   ADCSRA |= (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
 
-  // Configuring Timer0
-  TCCR0B |= (1<<CS01) | (1<<CS00);                          // Prescaler to 64 -> Translates to 250kHz or 4us/cycle
-  OCR0A = 24;                                               // ADC Sample-and-hold 1.5cycles -> 12us. Thus, TOCM trigger at 24
+  // Configuring Timer1
+  TCCR1B |= (1<<CS11) | (1<<CS10);                          // Prescaler to 64 -> Translates to 250kHz or 4us/cycle
+  OCR1AL = 10;                                              // ADC Sample-and-hold 1.5cycles -> 12us. Thus, TOCM trigger at 4
+  OCR1AH = 0;
 
   /*
   Configuring interrupts (p. 89)
@@ -80,46 +81,50 @@ void setup() {
   Serial.begin(115200);
   Mouse.begin();
 
-  delay(1000);
-
-  // Calibration();
-  // calib_vals[0] = Calibration.getLowerX(OVERSAMPLING, CLAMP);
-  Serial.print("Xmin is: ");
-  Serial.println(calib_vals[0]);
-  // calib_vals[0] = Calibration.getLowerX(OVERSAMPLING, CLAMP);
+  delay(100);
 }
 
 void loop() {
   delay(5);
   float xval;
   float yval;
-
-  if (FourWireRTP.isFingered()) {
+  // long time = millis();
+  if (isFingered()) {
+    // while (millis() - time < 20){
+    //   // do nothing
+    // }
     for (int i = 0; i < OVERSAMPLING; i++) {
-      xvals[i] = FourWireRTP.readX();
+      xvals[i] = readX();
     }
     // xval = readX();
-    if (FourWireRTP.isFingered()) {
+    if (isFingered()) {
       for (int i = 0; i < OVERSAMPLING; i++) {
-        yvals[i] = FourWireRTP.readY();
+        yvals[i] = readY();
       }
       // yval = readY();
-      // p = xvals;
-      xval = FourWireRTP.doSomeMedianFiltering(xvals, OVERSAMPLING, CLAMP);
-      // p = yvals;
-      yval = FourWireRTP.doSomeMedianFiltering(yvals, OVERSAMPLING, CLAMP);
+      #ifdef FILTERING
+      xval = doSomeMedianFiltering(xvals, OVERSAMPLING, CLAMP);
+      yval = doSomeMedianFiltering(yvals, OVERSAMPLING, CLAMP);
+      #else
+      xval = xvals[0];
+      yval = yvals[0];
+      #endif
 
       // Mouse control values are only send if MOUSE_EN (PIND6) is pulled LOW,
       // else positional vales are sent over serial
       if (!(PIND & (1<<MOUSE_EN))) {
-        xval = map(xval, XMIN, XMAX, -MOUSE_SPEED, MOUSE_SPEED);
-        yval = map(yval, YMIN, YMAX, MOUSE_SPEED, -MOUSE_SPEED);
+        xval = myMap(xval, XMIN, XMAX, -MOUSE_SPEED, MOUSE_SPEED);
+        yval = myMap(yval, YMIN, YMAX, MOUSE_SPEED, -MOUSE_SPEED);
         Mouse.move(xval, yval, 0);
         // Serial.print(xval);Serial.print("\t");Serial.println(yval);
         delay(MOUSE_DELAY);
       } else {
-        xval = map(xval, XMIN, XMAX+1.0, -5*WIDTH, 5*WIDTH+1)/10.0;
-        yval = map(yval, YMIN, YMAX+1.0, -5*HEIGHT, 5*HEIGHT+1)/10.0;
+        #ifdef MAPPING
+        // xval = map(xval, XMIN, XMAX+1.0, 5*WIDTH, -5*WIDTH+1)/10.0;
+        // yval = map(yval, YMIN, YMAX+1.0, -5*HEIGHT, 5*HEIGHT+1)/10.0;
+        xval = myMap(xval, XMIN, XMAX, WIDTH*.5, -WIDTH*.5);
+        yval = myMap(yval, YMIN, YMAX, -HEIGHT*.5, HEIGHT*.5);
+        #endif
         Serial.print(xval,1);Serial.print("\t");Serial.println(yval,1);
       }
     }
@@ -135,14 +140,8 @@ ISR(INT0_vect){
   }
 }
 
-ISR(TIMER0_COMPA_vect) {
+ISR(TIMER1_COMPA_vect) {
   // setTOCM(false);
-  DDRF |= (1<<DDF5) | (1<<DDF4);                            // PF5 and PF4 as output
-  PORTF |= (1<<PORTF5) | (1<<PORTF4);                       // PF5 and PF4 HIGH
-  // DDRF = 0x30;
-  // PORTF = 0x30;
-}
-
-ISR(WDT_vect) {
-  Serial.println("WDT Timeout. Resetting MCU. Bye.");
+  DDRF &= ~((1<<DDF5) | (1<<DDF4));                            // PF5 and PF4 as output
+  PORTF &= ~((1<<PORTF5) | (1<<PORTF4));                       // PF5 and PF4 LOW
 }

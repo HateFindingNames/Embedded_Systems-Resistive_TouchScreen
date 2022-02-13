@@ -72,7 +72,7 @@ class Draw:
 	def update(self, i, r_xs, r_ys, g_xs, g_ys, b_xs, b_ys):
 		line = ser.readline().decode('ascii')
 		values = line.split('\t')
-		xval = float(values[0])*-1
+		xval = float(values[0])
 		yval = float(values[1])
 		self.pen.set_xdata(xval)
 		self.pen.set_ydata(yval)
